@@ -106,6 +106,10 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=QBJDBRWV
 
+[GeneratedDocument1]
+DocumentPath=Project Outputs for usb board\Design Rule Check - usb board.html
+DItemRevisionGUID=
+
 [Configuration1]
 Name=Default Configuration
 ParameterCount=0
