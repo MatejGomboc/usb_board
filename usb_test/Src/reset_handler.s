@@ -27,6 +27,7 @@ loop_set_bss:
     str r0, [r1, r2]
     bgt loop_set_bss
 loop_set_bss_done:
+    bl __libc_init_array
     bl main
 loop_forever:
     b loop_forever
