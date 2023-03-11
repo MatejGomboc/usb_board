@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.24.2)
+
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/arm-none-eabi.cmake)
 
 project(usb_test LANGUAGES C CXX ASM)
 
@@ -77,9 +79,9 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
 
 target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -mcpu=cortex-m0
-    -T${CMAKE_PROJECT_SRC_FOLDER}STM32F072CBTX.ld
+    -T${CMAKE_SOURCE_DIR}/STM32F072CBTX.ld
     --specs=nosys.specs
-    -Wl,-Map="${CMAKE_PROJECT_NAME}.map"
+    #-Wl,-Map="${CMAKE_PROJECT_NAME}.map"
     -Wl,--cref
     -Wl,--gc-sections
     -static
