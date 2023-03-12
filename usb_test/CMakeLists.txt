@@ -28,26 +28,21 @@ add_executable(${CMAKE_PROJECT_NAME}
 
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<COMPILE_LANGUAGE:ASM>:
-        -mcpu=cortex-m0
         -x assembler-with-cpp
-        --specs=nano.specs
-        -mfloat-abi=soft
-        -mthumb
     >
 
-    $<$<COMPILE_LANGUAGE:C>:
+    $<$<OR:$<COMPILE_LANGUAGE:ASM>,$<COMPILE_LANGUAGE:C>>:
         -mcpu=cortex-m0
         -std=gnu18
-        -ffunction-sections
-        -fdata-sections
-        -fno-strict-aliasing
+        -MMD
+        -MP
+        -MF
         -Wall
         -Wextra
-        -pedantic
-        -pedantic-errors
-        -Wmissing-include-dirs
-        -Wconversion
-        -fPIC
+        -Wpedantic
+        -Wshadow
+        -ffunction-sections
+        -fdata-sections
         -fstack-usage
         --specs=nano.specs
         -mfloat-abi=soft
@@ -82,7 +77,7 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -mcpu=cortex-m0
     -T${CMAKE_SOURCE_DIR}/STM32F072CBTX.ld
     --specs=nosys.specs
-    -Wl,-Map=${CMAKE_PROJECT_NAME}.map
+    -Wl,-Map=${CMAKE_PROJECT_NAME}.map,--cref
     -Wl,--cref
     -Wl,--gc-sections
     -static
@@ -92,10 +87,12 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND arm-none-eabi-size ${CMAKE_PROJECT_NAME}.elf
+    COMMAND arm-none-eabi-size -A ${CMAKE_PROJECT_NAME}.elf
+    COMMAND ${CMAKE_OBJDUMP} -P mem-usage ${CMAKE_PROJECT_NAME}.elf
 )
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O ihex ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.hex
-    COMMAND ${CMAKE_OBJCOPY} -O binary -S ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.bin
+    COMMAND ${CMAKE_OBJCOPY} --gap-fill 0 -O ihex ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.hex
+    COMMAND ${CMAKE_OBJCOPY} --gap-fill 0 -O binary -S ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.bin
+    COMMAND ${CMAKE_OBJDUMP} -S --disassemble ${CMAKE_PROJECT_NAME}.elf > ${CMAKE_PROJECT_NAME}.asm
 )
