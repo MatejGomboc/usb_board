@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.24.2)
 
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/arm-none-eabi.cmake)
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_PROCESSOR ARM)
+
+set(CMAKE_EXECUTABLE_SUFFIX_CXX ".elf")
+
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 project(usb_test LANGUAGES C CXX ASM)
 
@@ -33,8 +38,6 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<COMPILE_LANGUAGE:C>:
         -mcpu=cortex-m0
         -std=gnu18
-        $<$<CONFIG:Debug>:-Og>
-        $<$<CONFIG:Release>:-Os>
         -ffunction-sections
         -fdata-sections
         -fno-strict-aliasing
@@ -54,8 +57,6 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:
         -mcpu=cortex-m0
         -std=gnu++20
-        $<$<CONFIG:Debug>:-Og>
-        $<$<CONFIG:Release>:-Os>
         -ffunction-sections
         -fdata-sections
         -fno-strict-aliasing
@@ -81,7 +82,7 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -mcpu=cortex-m0
     -T${CMAKE_SOURCE_DIR}/STM32F072CBTX.ld
     --specs=nosys.specs
-    #-Wl,-Map="${CMAKE_PROJECT_NAME}.map"
+    -Wl,-Map=${CMAKE_PROJECT_NAME}.map
     -Wl,--cref
     -Wl,--gc-sections
     -static
@@ -91,10 +92,10 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_SIZE_UTIL} $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
+    COMMAND arm-none-eabi-size ${CMAKE_PROJECT_NAME}.elf
 )
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.hex
-    COMMAND ${CMAKE_OBJCOPY} -O binary -S $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.bin
+    COMMAND ${CMAKE_OBJCOPY} -O ihex ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.hex
+    COMMAND ${CMAKE_OBJCOPY} -O binary -S ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.bin
 )
