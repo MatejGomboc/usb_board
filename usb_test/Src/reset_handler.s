@@ -1,35 +1,61 @@
 .syntax unified
-.cpu cortex-m0
-.thumb
-
-.section .text, "ax", %progbits
 .global Reset_Handler
+
+/**
+ * These are the addresses for the initialized (data) and uninitialized (bss)
+ * variables. The initialized variables will be copied from FLASH to RAM. The
+ * uninitialized variables will be set to 0. These addresses are set in the
+ * linker file.
+ */
+.word __data_flash_start
+.word __data_start
+.word __data_end
+.word __bss_start
+.word __bss_end
+
+/**
+ * This code is called when the processor starts following a reset event. This
+ * code only copies the global variables to RAM and sets the uninitialized
+ * variables to 0.
+ */
+.section .text.Reset_Handler
 .type Reset_Handler, %function
 Reset_Handler:
-    ldr r1, =__stack_end__
-    ldr r2, =__data_start__
-    ldr r3, =__data_end__
-    subs r3, r2
-    ble loop_set_data_done
-loop_set_data:
-    subs r3, #4
-    ldr r0, [r1,r3]
-    str r0, [r2,r3]
-    bgt loop_set_data
-loop_set_data_done:
-    ldr r1, =__bss_start__
-    ldr r2, =__bss_end__
-    movs r0, 0
-    subs r2, r1
-    ble loop_set_bss_done
-loop_set_bss:
-    subs r2, #4
-    str r0, [r1, r2]
-    bgt loop_set_bss
-loop_set_bss_done:
-    bl __libc_init_array
-    bl main
-loop_forever:
-    b loop_forever
+// Copy the initialized global variables to RAM
+    movs r0, #0
+    ldr  r1, = __data_start
+    ldr  r2, = __data_end
+    ldr  r3, = __data_flash_start
+    b    LoopCopyData
 
-.size Reset_Handler, . - Reset_Handler
+CopyData:
+    ldr  r4, [r3, r0]
+    str  r4, [r1, r0]
+    adds r0, r0, #4
+
+LoopCopyData:
+    adds r4, r1, r0
+    cmp  r4, r2
+    bcc  CopyData
+
+// Fill uninitialized variables with zeros
+    movs r0, #0
+    ldr  r1, = __bss_start
+    ldr  r2, = __bss_end
+    b    LoopFillZerobss
+
+FillZerobss:
+    str  r0, [r1]
+    adds r1, r1, #4
+
+LoopFillZerobss:
+    cmp  r1, r2
+    bcc  FillZerobss
+
+// Call the libc init function
+    bl   __libc_init_array
+
+// Call the main function
+    bl   main
+
+.size Reset_Handler, .-Reset_Handler
