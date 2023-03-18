@@ -134,6 +134,9 @@ SECTIONS
     __stack_end__ = ORIGIN(RAM) + LENGTH(RAM);
 
     ASSERT(__needed_heap_size__ + __needed_stack_size__ <= LENGTH(RAM) - SIZEOF(.data) - SIZEOF(.bss), "Not enough space in RAM for heap and stack.")
+    
+    PROVIDE( end = . );
+    PROVIDE( _end = . );
 
     /* Remove information from the compiler libraries */
     /DISCARD/ :
