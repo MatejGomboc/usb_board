@@ -1,9 +1,8 @@
 .syntax unified
 .global isr_vectors
 
-.section .isr_vectors, "a", %progbits
+.section .isr_vectors, "ax", %progbits
 .type isr_vectors, %object
-.size isr_vectors, .-isr_vectors
 isr_vectors:
     .word __end_stack
     .word Reset_Handler

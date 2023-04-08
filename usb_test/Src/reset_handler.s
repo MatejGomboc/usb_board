@@ -2,18 +2,6 @@
 .global Reset_Handler
 
 /**
- * These are the addresses for the initialized (data) and uninitialized (bss)
- * variables. The initialized variables will be copied from FLASH to RAM. The
- * uninitialized variables will be set to 0. These addresses are set in the
- * linker file.
- */
-.word __data_flash_start
-.word __data_start
-.word __data_end
-.word __bss_start
-.word __bss_end
-
-/**
  * This code is called when the processor starts following a reset event. This
  * code only copies the global variables to RAM and sets the uninitialized
  * variables to 0.
@@ -52,10 +40,5 @@ LoopFillZerobss:
     cmp  r1, r2
     bcc  FillZerobss
 
-// Call the libc init function
-    bl   __libc_init_array
-
 // Call the main function
     bl   main
-
-.size Reset_Handler, .-Reset_Handler
