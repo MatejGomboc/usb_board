@@ -5,11 +5,7 @@ MEMORY {
 
 OUTPUT_FORMAT("elf32-littlearm")
 
-ENTRY(Reset_Handler)
-
-__heap_size = 0x200;
-__stack_size = 0x400;
-__end_stack = ORIGIN(RAM) + LENGTH(RAM);
+ENTRY(resetHandler)
 
 SECTIONS {
     .isr_vectors : {
@@ -27,6 +23,7 @@ SECTIONS {
         *(.glue_7)
         *(.glue_7t)
         *(.eh_frame)
+        *(.gnu.linkonce.t.*)
 
         KEEP(*(.init))
         KEEP(*(.fini))
@@ -41,18 +38,21 @@ SECTIONS {
 
         *(.rodata)
         *(.rodata*)
+        *(.gnu.linkonce.r.*)
 
         . = ALIGN(4);
         __rodata_end = .;
     } > FLASH
 
     .ARM.extab : {
-        *(.ARM.extab* .gnu.linkonce.armextab.*)
+        *(.ARM.extab*)
+        *(.gnu.linkonce.armextab.*)
     } > FLASH
 
     .ARM : {
         __exidx_start = .;
         *(.ARM.exidx*)
+        *(.gnu.linkonce.armexidx.*)
         __exidx_end = .;
     } > FLASH
 
@@ -61,15 +61,17 @@ SECTIONS {
         KEEP(*(.preinit_array*))
         PROVIDE_HIDDEN(__preinit_array_end = .);
     } > FLASH
-	
+
     .init_array : {
         PROVIDE_HIDDEN(__init_array_start = .);
+        KEEP (*(SORT(.init_array.*)))
         KEEP(*(.init_array*))
         PROVIDE_HIDDEN(__init_array_end = .);
     } > FLASH
-    
+
 	.fini_array : {
         PROVIDE_HIDDEN(__fini_array_start = .);
+        KEEP (*(SORT(.fini_array.*)))
         KEEP(*(.fini_array*))
         PROVIDE_HIDDEN(__fini_array_end = .);
     } > FLASH
@@ -82,6 +84,8 @@ SECTIONS {
 
         *(.data)
         *(.data*)
+        *(.RamFunc)
+        *(.RamFunc*)
 
         . = ALIGN(4);
         __data_end = .;
@@ -99,15 +103,14 @@ SECTIONS {
         . = ALIGN(4);
         __bss_end = .;
         __bss_end__ = __bss_end;
+
+        PROVIDE(end = .);
+        PROVIDE(_end = .);
     } > RAM
 
-	PROVIDE (end = .);
-    PROVIDE (_end = .);
-
-    ASSERT(
-    	__heap_size + __stack_size <= LENGTH(RAM) - SIZEOF(.data) - SIZEOF(.bss), 
-    	"Not enough space in RAM for heap and stack."
-	)
+    __stack_start = ORIGIN(RAM) + SIZEOF(.data) + SIZEOF(.bss);
+    __stack_end = ORIGIN(RAM) + LENGTH(RAM);
+    __stack_size = LENGTH(RAM) - SIZEOF(.data) - SIZEOF(.bss);
 
     /DISCARD/ : {
         libc.a(*)
