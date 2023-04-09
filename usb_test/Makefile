@@ -15,29 +15,29 @@ INCLUDES :=
 LDSCRIPT := STM32F072CBTX.ld
 
 ifndef PROJECT_NAME
-$(error PROJECT_NAME is not defined)
+	$(error PROJECT_NAME is not defined)
 endif
 
 ifndef TARGET
-$(error TARGET is not defined)
+	$(error TARGET is not defined)
 endif
 
 TARGETS := Debug Release
 
 ifneq ($(filter $(TARGET),$(TARGETS)), $(TARGET))
-$(error TARGET must be set to either Debug or Release)
+	$(error TARGET must be set to either Debug or Release)
 endif
 
 ifndef SOURCES
-$(error SOURCES is not defined)
+	$(error SOURCES is not defined)
 endif
 
 ifndef LDSCRIPT
-$(error LDSCRIPT is not defined)
+	$(error LDSCRIPT is not defined)
 endif
 
-BIN_DIR := bin
-OBJ_DIR := obj
+BIN_DIR := bin/$(TARGET)
+OBJ_DIR := obj/$(TARGET)
 SRC_DIR := src
 
 AS := arm-none-eabi-gcc
@@ -58,7 +58,7 @@ CXXFLAGS := -mcpu=cortex-m0 -march=armv6-m -std=gnu++20 $(addprefix -I/$(SRC_DIR
 	-fno-threadsafe-statics -Wno-unused-parameter -Wold-style-cast -Wuseless-cast -Wsuggest-override
 
 LDFLAGS := -mcpu=cortex-m0 -march=armv6-m -T"$(LDSCRIPT)" -nostdlib -Wl,-Map="$(BIN_DIR)/$(PROJECT_NAME).map" \
-	-Wl,--cref -Wl,--gc-sections -static -Wl,--print-memory-usage -ffreestanding
+	-Wl,--cref -Wl,--gc-sections -static -Wl,--print-memory-usage -ffreestanding -mthumb
 
 ifeq ($(TARGET),Debug)
 	ASFLAGS += -DDEBUG
@@ -88,10 +88,10 @@ $(OBJ_DIR)/%.cpp.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -MT $@ -MF $(OBJ_DIR)/$*.d -o $@ $<
 
 $(BIN_DIR):
-	mkdir $(BIN_DIR)
+	mkdir -p $(BIN_DIR)
 
 $(OBJ_DIR):
-	mkdir $(OBJ_DIR)
+	mkdir -p $(OBJ_DIR)
 
 clean:
 	rm -rfd $(BIN_DIR)
