@@ -2,7 +2,7 @@ MAKEFLAGS += --no-builtin-rules --no-builtin-variables
 
 PROJECT_NAME := usb_test
 
-TARGET := Debug
+TARGET ?= Debug
 
 SOURCES := \
 	isr_vectors.s \
@@ -10,8 +10,7 @@ SOURCES := \
 	default_handler.s \
 	main.cpp
 
-INCLUDES := \
-	.
+INCLUDES :=
 
 LDSCRIPT := STM32F072CBTX.ld
 
@@ -40,7 +39,6 @@ endif
 BIN_DIR := bin
 OBJ_DIR := obj
 SRC_DIR := src
-INC_DIR := inc
 
 AS := arm-none-eabi-gcc
 CXX := arm-none-eabi-g++
@@ -51,16 +49,16 @@ OBJDUMP := arm-none-eabi-objdump
 
 #-masm-syntax-unified
 
-ASFLAGS := -mcpu=cortex-m0 -march=armv6-m -x assembler-with-cpp -mfloat-abi=soft -mthumb \
-	$(addprefix -I/$(INC_DIR)/,$(INCLUDES)) -MMD -MP -c -fstack-usage -Wmissing-include-dirs
+ASFLAGS := -mcpu=cortex-m0 -march=armv6-m -x assembler-with-cpp -mthumb \
+	$(addprefix -I/$(SRC_DIR)/,$(INCLUDES)) -MMD -MP -c -fstack-usage -Wmissing-include-dirs
 
-CXXFLAGS := -mcpu=cortex-m0 -march=armv6-m -std=gnu++17 $(addprefix -I/$(INC_DIR)/,$(INCLUDES)) -ffunction-sections \
+CXXFLAGS := -mcpu=cortex-m0 -march=armv6-m -std=gnu++20 $(addprefix -I/$(SRC_DIR)/,$(INCLUDES)) -ffunction-sections \
 	-fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -Wextra -pedantic -Wmissing-include-dirs -Wswitch-enum \
 	-Wconversion -fstack-usage -nostdlib -mfloat-abi=soft -mthumb -MMD -MP -c -Wshadow -Wno-unused-variable -ffreestanding \
 	-fno-threadsafe-statics -Wno-unused-parameter -Wold-style-cast -Wuseless-cast -Wsuggest-override
 
 LDFLAGS := -mcpu=cortex-m0 -march=armv6-m -T"$(LDSCRIPT)" -nostdlib -Wl,-Map="$(BIN_DIR)/$(PROJECT_NAME).map" \
-	-Wl,--cref -Wl,--gc-sections -static -mfloat-abi=soft -mthumb -Wl,--print-memory-usage -ffreestanding
+	-Wl,--cref -Wl,--gc-sections -static -Wl,--print-memory-usage -ffreestanding
 
 ifeq ($(TARGET),Debug)
 	ASFLAGS += -DDEBUG
