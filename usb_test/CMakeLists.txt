@@ -1,98 +1,102 @@
 cmake_minimum_required(VERSION 3.24.2)
 
-set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_SYSTEM_PROCESSOR ARM)
-
-set(CMAKE_EXECUTABLE_SUFFIX_CXX ".elf")
-
-set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-
-project(usb_test LANGUAGES C CXX ASM)
-
-set(CMAKE_C_STANDARD 18)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS ON)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+project(usb_test LANGUAGES ASM C CXX)
 
 add_executable(${CMAKE_PROJECT_NAME}
-    isr_vectors.s
-    reset_handler.s
+    vectors_table.s
+    reset_handler.cpp
     default_handler.cpp
     main.cpp
+    utils.hpp
+    cortexm0_exceptions.hpp
+    cortexm0_special_regs.hpp
+    cortexm0_nvic.hpp
+    cortexm0_scb.hpp
+    cortexm0_sys_tick.hpp
 )
 
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<COMPILE_LANGUAGE:ASM>:
-        -x assembler-with-cpp
+        -mcpu=cortex-m0
+        -march=armv6-m
+        -mthumb
+        -fstack-usage
+        -Wmissing-include-dirs
+        -masm-syntax-unified
     >
 
-    $<$<OR:$<COMPILE_LANGUAGE:ASM>,$<COMPILE_LANGUAGE:C>>:
+    $<$<COMPILE_LANGUAGE:C>:
         -mcpu=cortex-m0
+        -march=armv6-m
         -std=gnu18
-        -MMD
-        -MP
-        -MF
-        -Wall
-        -Wextra
-        -Wpedantic
-        -Wshadow
         -ffunction-sections
         -fdata-sections
+        -Wall
+        -Wextra
+        -pedantic
+        -Wmissing-include-dirs
+        -Wswitch-enum
+        -Wconversion
         -fstack-usage
-        --specs=nano.specs
+        -nostdlib
         -mfloat-abi=soft
         -mthumb
+        -Wshadow
+        -Wno-unused-variable
+        -ffreestanding
+        -Wno-unused-parameter
+        -Wuseless-cast
+        -Wsuggest-override
+        -masm-syntax-unified
     >
 
     $<$<COMPILE_LANGUAGE:CXX>:
         -mcpu=cortex-m0
+        -march=armv6-m
         -std=gnu++20
         -ffunction-sections
         -fdata-sections
-        -fno-strict-aliasing
         -fno-exceptions
         -fno-rtti
-        -fno-threadsafe-statics
         -fno-use-cxa-atexit
         -Wall
         -Wextra
         -pedantic
-        -pedantic-errors
         -Wmissing-include-dirs
+        -Wswitch-enum
         -Wconversion
-        -fPIC
         -fstack-usage
-        --specs=nano.specs
+        -nostdlib
         -mfloat-abi=soft
         -mthumb
+        -Wshadow
+        -Wno-unused-variable
+        -ffreestanding
+        -fno-threadsafe-statics
+        -Wno-unused-parameter
+        -Wold-style-cast
+        -Wuseless-cast
+        -Wsuggest-override
+        -masm-syntax-unified
     >
 )
 
 target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -mcpu=cortex-m0
+    -march=armv6-m
     -T${CMAKE_SOURCE_DIR}/STM32F072CBTX.ld
-    --specs=nosys.specs
     -Wl,-Map=${CMAKE_PROJECT_NAME}.map,--cref
+    -nostdlib
     -Wl,--cref
     -Wl,--gc-sections
     -static
-    --specs=nano.specs
-    -mfloat-abi=soft
+    -Wl,--print-memory-usage
+    -ffreestanding
     -mthumb
 )
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND arm-none-eabi-size -A ${CMAKE_PROJECT_NAME}.elf
-    COMMAND ${CMAKE_OBJDUMP} -P mem-usage ${CMAKE_PROJECT_NAME}.elf
-)
-
-add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} --gap-fill 0 -O ihex ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.hex
+    COMMAND ${CMAKE_SIZE} -A ${CMAKE_PROJECT_NAME}.elf
     COMMAND ${CMAKE_OBJCOPY} --gap-fill 0 -O binary -S ${CMAKE_PROJECT_NAME}.elf ${CMAKE_PROJECT_NAME}.bin
-    COMMAND ${CMAKE_OBJDUMP} -S --disassemble ${CMAKE_PROJECT_NAME}.elf > ${CMAKE_PROJECT_NAME}.asm
+    COMMAND ${CMAKE_OBJDUMP} -S -d -l -C -z ${CMAKE_PROJECT_NAME}.elf > ${CMAKE_PROJECT_NAME}.asm
 )
