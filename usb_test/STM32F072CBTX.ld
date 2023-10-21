@@ -8,15 +8,15 @@ OUTPUT_FORMAT("elf32-littlearm")
 ENTRY(resetHandler)
 
 SECTIONS {
-    .isr_vectors : {
+    .vectors_table : {
         . = ALIGN(4);
-        KEEP(*(.isr_vectors));
+        KEEP(*(.vectors_table));
         . = ALIGN(4);
     } > FLASH
 
     .text : {
         . = ALIGN(4);
-        __text_start = .;
+        __TEXT_START__ = .;
 
         *(.text)
         *(.text*)
@@ -28,59 +28,91 @@ SECTIONS {
         KEEP(*(.init))
         KEEP(*(.fini))
 
+		*crtbegin.o(.ctors)
+		*crtbegin?.o(.ctors)
+		*(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
+		*(SORT(.ctors.*))
+		*(.ctors)
+
+ 		*crtbegin.o(.dtors)
+ 		*crtbegin?.o(.dtors)
+ 		*(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
+ 		*(SORT(.dtors.*))
+ 		*(.dtors)
+
         . = ALIGN(4);
-        __text_end = .;
+        __TEXT_END__ = .;
     } > FLASH
 
     .rodata : {
         . = ALIGN(4);
-        __rodata_start = .;
+        __RODATA_START__ = .;
 
         *(.rodata)
         *(.rodata*)
         *(.gnu.linkonce.r.*)
 
         . = ALIGN(4);
-        __rodata_end = .;
+        __RODATA_END__ = .;
     } > FLASH
 
     .ARM.extab : {
+        . = ALIGN(4);
         *(.ARM.extab*)
         *(.gnu.linkonce.armextab.*)
+        . = ALIGN(4);
     } > FLASH
 
-    .ARM : {
+    .ARM.exidx : {
+        . = ALIGN(4);
+        __EXIDX_START__ = .;
         __exidx_start = .;
+
         *(.ARM.exidx*)
         *(.gnu.linkonce.armexidx.*)
+
+        . = ALIGN(4);
+        __EXIDX_END__ = .;
         __exidx_end = .;
     } > FLASH
 
     .preinit_array : {
-        PROVIDE_HIDDEN(__preinit_array_start = .);
+        . = ALIGN(4);
+        PROVIDE_HIDDEN(__PREINIT_ARRAY_START__ = .);
+        PROVIDE_HIDDEN (__preinit_array_start = .);
         KEEP(*(.preinit_array*))
-        PROVIDE_HIDDEN(__preinit_array_end = .);
+        PROVIDE_HIDDEN(__PREINIT_ARRAY_END__ = .);
+        PROVIDE_HIDDEN (__preinit_array_end = .);
+        . = ALIGN(4);
     } > FLASH
 
     .init_array : {
-        PROVIDE_HIDDEN(__init_array_start = .);
+        . = ALIGN(4);
+        PROVIDE_HIDDEN(__INIT_ARRAY_START__ = .);
+        PROVIDE_HIDDEN (__init_array_start = .);
         KEEP (*(SORT(.init_array.*)))
         KEEP(*(.init_array*))
-        PROVIDE_HIDDEN(__init_array_end = .);
+        PROVIDE_HIDDEN(__INIT_ARRAY_END__ = .);
+        PROVIDE_HIDDEN (__init_array_end = .);
+        . = ALIGN(4);
     } > FLASH
 
 	.fini_array : {
-        PROVIDE_HIDDEN(__fini_array_start = .);
+        . = ALIGN(4);
+        PROVIDE_HIDDEN(__FINI_ARRAY_START__ = .);
+        PROVIDE_HIDDEN (__fini_array_start = .);
         KEEP (*(SORT(.fini_array.*)))
         KEEP(*(.fini_array*))
-        PROVIDE_HIDDEN(__fini_array_end = .);
+        PROVIDE_HIDDEN(__FINI_ARRAY_END__ = .);
+        PROVIDE_HIDDEN (__fini_array_end = .);
+        . = ALIGN(4);
     } > FLASH
 
-    __data_flash_start = LOADADDR(.data);
+    __DATA_FLASH_START__ = LOADADDR(.data);
 
     .data : {
         . = ALIGN(4);
-        __data_start = .;
+        __DATA_START__ = .;
 
         *(.data)
         *(.data*)
@@ -88,29 +120,27 @@ SECTIONS {
         *(.RamFunc*)
 
         . = ALIGN(4);
-        __data_end = .;
+        __DATA_END__ = .;
     } > RAM AT> FLASH
 
     .bss : {
         . = ALIGN(4);
-        __bss_start = .;
-        __bss_start__ = __bss_start;
+        __BSS_START__ = .;
 
         *(.bss)
         *(.bss*)
         *(COMMON)
 
         . = ALIGN(4);
-        __bss_end = .;
-        __bss_end__ = __bss_end;
+        __BSS_END__ = .;
 
         PROVIDE(end = .);
         PROVIDE(_end = .);
     } > RAM
 
-    __stack_start = ORIGIN(RAM) + SIZEOF(.data) + SIZEOF(.bss);
-    __stack_end = ORIGIN(RAM) + LENGTH(RAM);
-    __stack_size = LENGTH(RAM) - SIZEOF(.data) - SIZEOF(.bss);
+    __STACK_START__ = ORIGIN(RAM) + SIZEOF(.data) + SIZEOF(.bss);
+    __STACK_END__ = ORIGIN(RAM) + LENGTH(RAM);
+    __STACK_SIZE__ = LENGTH(RAM) - SIZEOF(.data) - SIZEOF(.bss);
 
     /DISCARD/ : {
         libc.a(*)

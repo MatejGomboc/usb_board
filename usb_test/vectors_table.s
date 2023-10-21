@@ -1,10 +1,9 @@
-.syntax unified
-.global isr_vectors
+.global vectors_table
+.section .vectors_table, "ax", %progbits
+.type vectors_table, %object
 
-.section .isr_vectors, "ax", %progbits
-.type isr_vectors, %object
-isr_vectors:
-    .word __stack_end
+vectors_table:
+    .word __STACK_END__
     .word resetHandler
     .word nmiHandler
     .word hardFaultHandler
