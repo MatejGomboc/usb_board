@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils.hpp"
+#include <cstdint>
 
 namespace CortexM0::Nvic {
     static uint32_t* const BASE_ADDR = reinterpret_cast<uint32_t*>(0xE000E100);
@@ -19,7 +20,7 @@ namespace CortexM0::Nvic {
         volatile uint32_t ipr[8]; //!< sets priorities of interrupts
     };
 
-    __attribute__((always_inline)) static inline Registers* registers()
+    static inline Registers* registers()
     {
         return reinterpret_cast<Registers*>(BASE_ADDR);
     }
@@ -37,8 +38,8 @@ namespace CortexM0::Nvic {
     static inline void disableIrq(uint8_t irq_number)
     {
         Utils::setBit(registers()->icer, irq_number & 0x1F);
-        asm volatile ("dsb" : : : "memory");
-        asm volatile ("isb" : : : "memory");
+        asm volatile("DSB" : : : "memory");
+        asm volatile("ISB" : : : "memory");
     }
 
     static inline bool isIrqPending(uint8_t irq_number)

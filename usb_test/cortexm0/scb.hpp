@@ -15,7 +15,14 @@ namespace CortexM0::Scb {
             uint32_t implementer: 4; //!< implementer code (0x41: ARM)
         } bits;
 
-        uint32_t value;
+        uint32_t value = 0;
+
+        Cpuid() = default;
+
+        Cpuid(uint32_t new_value)
+        {
+            value = new_value;
+        }
     };
 
     //! interrupt control and state register
@@ -35,7 +42,14 @@ namespace CortexM0::Scb {
             uint32_t nmi_pend_set: 1; //!< changes NMI exception state to pending
         } bits;
 
-        uint32_t value;
+        uint32_t value = 0;
+
+        Icsr() = default;
+
+        Icsr(uint32_t new_value)
+        {
+            value = new_value;
+        }
     };
 
     //! enables system reset
@@ -51,7 +65,14 @@ namespace CortexM0::Scb {
             uint32_t vect_key: 16; //!< on writes, VECT_KEY to this field, otherwise the write is ignored
         } bits;
 
-        uint32_t value;
+        uint32_t value = 0;
+
+        Aircr() = default;
+
+        Aircr(uint32_t new_value)
+        {
+            value = new_value;
+        }
     };
 
     //! controls features of entry to and exit from low power state
@@ -69,7 +90,14 @@ namespace CortexM0::Scb {
             uint32_t reserved2: 28;
         } bits;
 
-        uint32_t value;
+        uint32_t value = 0;
+
+        Scr() = default;
+
+        Scr(uint32_t new_value)
+        {
+            value = new_value;
+        }
     };
 
     //! is a read-only register and indicates some aspects of the behavior of the processor
@@ -82,7 +110,14 @@ namespace CortexM0::Scb {
             uint32_t reserved2: 22;
         } bits;
 
-        uint32_t value;
+        uint32_t value = 0;
+
+        Ccr() = default;
+
+        Ccr(uint32_t new_value)
+        {
+            value = new_value;
+        }
     };
 
     //! sets the priority level of the exception handlers that have configurable priority (SVCall)
@@ -92,7 +127,14 @@ namespace CortexM0::Scb {
             uint32_t sv_call_except_priority: 8; //!< priority of SVCall exception
         } bits;
 
-        uint32_t value;
+        uint32_t value = 0;
+
+        Shpr2() = default;
+
+        Shpr2(uint32_t new_value)
+        {
+            value = new_value;
+        }
     };
 
     //! sets the priority level of the exception handlers that have configurable priority (PendSV, SysTick)
@@ -103,7 +145,14 @@ namespace CortexM0::Scb {
             uint32_t sys_tick_except_priority: 8; //!< priority of SysTick exception
         } bits;
 
-        uint32_t value;
+        uint32_t value = 0;
+
+        Shpr3() = default;
+
+        Shpr3(uint32_t new_value)
+        {
+            value = new_value;
+        }
     };
 
     struct Registers
@@ -119,23 +168,23 @@ namespace CortexM0::Scb {
         volatile uint32_t shpr3; //!< sets the priority level of the exception handlers that have configurable priority (PendSV, SysTick)
     };
 
-    __attribute__((always_inline)) static inline Registers* registers()
+    static inline Registers* registers()
     {
         return reinterpret_cast<Registers*>(BASE_ADDR);
     }
 
-    __attribute__((noreturn)) static inline void systemReset()
+    [[noreturn]] static inline void systemReset()
     {
-        asm volatile ("dsb" : : : "memory");
+        asm volatile("DSB" : : : "memory");
 
-        Aircr aircr = { .value = registers()->aircr };
+        Aircr aircr { registers()->aircr };
 
         aircr.bits.sys_reset_req = true;
         aircr.bits.vect_key = Aircr::VECT_KEY;
 
         registers()->aircr = aircr.value;
 
-        asm volatile ("dsb" : : : "memory");
+        asm volatile("DSB" : : : "memory");
 
         while(true);
     }

@@ -21,7 +21,14 @@ namespace CortexM0::SysTick {
             uint32_t reserved1: 15;
         } bits;
 
-        uint32_t value;
+        uint32_t value = 0;
+
+        CtrlStatus() = default;
+
+        CtrlStatus(uint32_t new_value)
+        {
+            value = new_value;
+        }
     };
 
     union Calibration {
@@ -32,7 +39,14 @@ namespace CortexM0::SysTick {
             uint32_t noref: 1; //!< always '1', indicates that no separate reference clock is provided
         } bits;
 
-        uint32_t value;
+        uint32_t value = 0;
+
+        Calibration() = default;
+
+        Calibration(uint32_t new_value)
+        {
+            value = new_value;
+        }
     };
 
     struct Registers
@@ -43,7 +57,7 @@ namespace CortexM0::SysTick {
         volatile uint32_t calibration; //!< controls timer calibration
     };
 
-    __attribute__((always_inline)) static inline Registers* registers()
+    static inline Registers* registers()
     {
         return reinterpret_cast<Registers*>(BASE_ADDR);
     }

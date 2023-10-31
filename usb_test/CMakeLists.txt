@@ -2,23 +2,38 @@ cmake_minimum_required(VERSION 3.24.2)
 
 project(usb_test LANGUAGES ASM C CXX)
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 add_executable(${CMAKE_PROJECT_NAME}
-    vectors_table.s
-    reset_handler.cpp
-    default_handler.cpp
     main.cpp
+    linker_symbols.cpp
+    linker_symbols.hpp
+    vectors_table.s
+    reset_isr.cpp
+    fault_isrs.cpp
+    rtos_isrs.cpp
     utils.hpp
-    cortexm0_exceptions.hpp
-    cortexm0_special_regs.hpp
-    cortexm0_nvic.hpp
-    cortexm0_scb.hpp
-    cortexm0_sys_tick.hpp
+    cortexm0/exceptions.hpp
+    cortexm0/special_regs.hpp
+    cortexm0/nvic.hpp
+    cortexm0/scb.hpp
+    cortexm0/systick.hpp
+    rtos_api.hpp
+    rtos_api.cpp
+    rtos_kernel.cpp
+    rtos_kernel.hpp
+    rtos_svc_numbers.hpp
+)
+
+target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+    MAX_NUM_OF_THREADS=4
+    SYSTICK_PERIOD_CYCLES=1000
+    MAIN_THREAD_STACK_SIZE=0x400
 )
 
 target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
     $<$<COMPILE_LANGUAGE:ASM>:
         -mcpu=cortex-m0
-        -march=armv6-m
         -mthumb
         -fstack-usage
         -Wmissing-include-dirs
@@ -27,7 +42,6 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
 
     $<$<COMPILE_LANGUAGE:C>:
         -mcpu=cortex-m0
-        -march=armv6-m
         -std=gnu18
         -ffunction-sections
         -fdata-sections
@@ -41,18 +55,12 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
         -nostdlib
         -mfloat-abi=soft
         -mthumb
-        -Wshadow
-        -Wno-unused-variable
         -ffreestanding
-        -Wno-unused-parameter
-        -Wuseless-cast
-        -Wsuggest-override
         -masm-syntax-unified
     >
 
     $<$<COMPILE_LANGUAGE:CXX>:
         -mcpu=cortex-m0
-        -march=armv6-m
         -std=gnu++20
         -ffunction-sections
         -fdata-sections
@@ -69,21 +77,14 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
         -nostdlib
         -mfloat-abi=soft
         -mthumb
-        -Wshadow
-        -Wno-unused-variable
         -ffreestanding
         -fno-threadsafe-statics
-        -Wno-unused-parameter
-        -Wold-style-cast
-        -Wuseless-cast
-        -Wsuggest-override
         -masm-syntax-unified
     >
 )
 
 target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -mcpu=cortex-m0
-    -march=armv6-m
     -T${CMAKE_SOURCE_DIR}/STM32F072CBTX.ld
     -Wl,-Map=${CMAKE_PROJECT_NAME}.map,--cref
     -nostdlib
@@ -91,8 +92,9 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -Wl,--gc-sections
     -static
     -Wl,--print-memory-usage
-    -ffreestanding
+    -mfloat-abi=soft
     -mthumb
+    -Wl,--defsym=__PROCESS_STACK_SIZE_SYMBOL__=0x3000
 )
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD

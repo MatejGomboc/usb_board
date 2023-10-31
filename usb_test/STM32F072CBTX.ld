@@ -1,13 +1,27 @@
 MEMORY {
-    FLASH  (rx) : ORIGIN = 0x08000000, LENGTH = 128K
+    FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 128K
     RAM   (rwx) : ORIGIN = 0x20000000, LENGTH = 16K
 }
 
 OUTPUT_FORMAT("elf32-littlearm")
 
-ENTRY(resetHandler)
+ENTRY(resetIsr)
 
 SECTIONS {
+    __DATA_FLASH_START_SYMBOL__ = LOADADDR(.data);
+
+    __GLOBAL_STACK_BOTTOM_SYMBOL__ = ORIGIN(RAM) + SIZEOF(.data) + SIZEOF(.bss);
+    __GLOBAL_STACK_SIZE_SYMBOL__ = LENGTH(RAM) - SIZEOF(.data) - SIZEOF(.bss);
+    __GLOBAL_STACK_TOP_SYMBOL__ = ORIGIN(RAM) + LENGTH(RAM);
+
+    __PROCESS_STACK_BOTTOM_SYMBOL__ = __GLOBAL_STACK_BOTTOM_SYMBOL__;
+    __PROCESS_STACK_SIZE_SYMBOL__ = DEFINED(__PROCESS_STACK_SIZE_SYMBOL__) ? __PROCESS_STACK_SIZE_SYMBOL__ : 0;
+    __PROCESS_STACK_TOP_SYMBOL__ = __PROCESS_STACK_BOTTOM_SYMBOL__ + __PROCESS_STACK_SIZE_SYMBOL__;
+
+    __MAIN_STACK_BOTTOM_SYMBOL__ = __PROCESS_STACK_TOP_SYMBOL__;
+    __MAIN_STACK_SIZE_SYMBOL__ =  __GLOBAL_STACK_SIZE_SYMBOL__ - __PROCESS_STACK_SIZE_SYMBOL__;
+    __MAIN_STACK_TOP_SYMBOL__ = __MAIN_STACK_BOTTOM_SYMBOL__ + __MAIN_STACK_SIZE_SYMBOL__;
+
     .vectors_table : {
         . = ALIGN(4);
         KEEP(*(.vectors_table));
@@ -16,7 +30,6 @@ SECTIONS {
 
     .text : {
         . = ALIGN(4);
-        __TEXT_START__ = .;
 
         *(.text)
         *(.text*)
@@ -25,8 +38,8 @@ SECTIONS {
         *(.eh_frame)
         *(.gnu.linkonce.t.*)
 
-        KEEP(*(.init))
-        KEEP(*(.fini))
+        KEEP(*(.init));
+        KEEP(*(.fini));
 
 		*crtbegin.o(.ctors)
 		*crtbegin?.o(.ctors)
@@ -41,19 +54,16 @@ SECTIONS {
  		*(.dtors)
 
         . = ALIGN(4);
-        __TEXT_END__ = .;
     } > FLASH
 
     .rodata : {
         . = ALIGN(4);
-        __RODATA_START__ = .;
 
         *(.rodata)
         *(.rodata*)
         *(.gnu.linkonce.r.*)
 
         . = ALIGN(4);
-        __RODATA_END__ = .;
     } > FLASH
 
     .ARM.extab : {
@@ -65,14 +75,12 @@ SECTIONS {
 
     .ARM.exidx : {
         . = ALIGN(4);
-        __EXIDX_START__ = .;
         __exidx_start = .;
 
         *(.ARM.exidx*)
         *(.gnu.linkonce.armexidx.*)
 
         . = ALIGN(4);
-        __EXIDX_END__ = .;
         __exidx_end = .;
     } > FLASH
 
@@ -80,7 +88,7 @@ SECTIONS {
         . = ALIGN(4);
         PROVIDE_HIDDEN(__PREINIT_ARRAY_START__ = .);
         PROVIDE_HIDDEN (__preinit_array_start = .);
-        KEEP(*(.preinit_array*))
+        KEEP(*(.preinit_array*));
         PROVIDE_HIDDEN(__PREINIT_ARRAY_END__ = .);
         PROVIDE_HIDDEN (__preinit_array_end = .);
         . = ALIGN(4);
@@ -90,8 +98,8 @@ SECTIONS {
         . = ALIGN(4);
         PROVIDE_HIDDEN(__INIT_ARRAY_START__ = .);
         PROVIDE_HIDDEN (__init_array_start = .);
-        KEEP (*(SORT(.init_array.*)))
-        KEEP(*(.init_array*))
+        KEEP (*(SORT(.init_array.*)));
+        KEEP(*(.init_array*));
         PROVIDE_HIDDEN(__INIT_ARRAY_END__ = .);
         PROVIDE_HIDDEN (__init_array_end = .);
         . = ALIGN(4);
@@ -101,18 +109,16 @@ SECTIONS {
         . = ALIGN(4);
         PROVIDE_HIDDEN(__FINI_ARRAY_START__ = .);
         PROVIDE_HIDDEN (__fini_array_start = .);
-        KEEP (*(SORT(.fini_array.*)))
-        KEEP(*(.fini_array*))
+        KEEP (*(SORT(.fini_array.*)));
+        KEEP(*(.fini_array*));
         PROVIDE_HIDDEN(__FINI_ARRAY_END__ = .);
         PROVIDE_HIDDEN (__fini_array_end = .);
         . = ALIGN(4);
     } > FLASH
 
-    __DATA_FLASH_START__ = LOADADDR(.data);
-
     .data : {
         . = ALIGN(4);
-        __DATA_START__ = .;
+        __DATA_START_SYMBOL__ = .;
 
         *(.data)
         *(.data*)
@@ -120,27 +126,23 @@ SECTIONS {
         *(.RamFunc*)
 
         . = ALIGN(4);
-        __DATA_END__ = .;
+        __DATA_END_SYMBOL__ = .;
     } > RAM AT> FLASH
 
     .bss : {
         . = ALIGN(4);
-        __BSS_START__ = .;
+        __BSS_START_SYMBOL__ = .;
 
         *(.bss)
         *(.bss*)
         *(COMMON)
 
         . = ALIGN(4);
-        __BSS_END__ = .;
+        __BSS_END_SYMBOL__ = .;
 
         PROVIDE(end = .);
         PROVIDE(_end = .);
     } > RAM
-
-    __STACK_START__ = ORIGIN(RAM) + SIZEOF(.data) + SIZEOF(.bss);
-    __STACK_END__ = ORIGIN(RAM) + LENGTH(RAM);
-    __STACK_SIZE__ = LENGTH(RAM) - SIZEOF(.data) - SIZEOF(.bss);
 
     /DISCARD/ : {
         libc.a(*)
