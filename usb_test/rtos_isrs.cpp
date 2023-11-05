@@ -6,13 +6,14 @@
 #undef KERNEL_CODE
 #include <cstdint>
 
-extern "C" void svcIsr(uint32_t svc_num, uint32_t* stack)
+void svcIsr(uint32_t svc_num, uint32_t* args)
 {
     switch (svc_num) {
 
     case static_cast<uint32_t>(Rtos::Kernel::SvcNumber::CREATE_THREAD): {
-        void (*thread_handler)() = reinterpret_cast<void(*)()>(stack[9]);
-        uint32_t thread_stack_size = stack[8];
+        void (*thread_handler)() = reinterpret_cast<void(*)()>(args[0]);
+        uint32_t thread_stack_size = args[1];
+        uint32_t* stack = args - 8;
         stack[0] = Rtos::Kernel::createThread(thread_handler, thread_stack_size); // R0
         break;
     }
@@ -34,13 +35,13 @@ extern "C" void svcIsr(uint32_t svc_num, uint32_t* stack)
     }
 }
 
-extern "C" void pendSvIsr()
+void pendSvIsr()
 {
     asm volatile("MOVS r0, %[svc_num]" : : [svc_num] "I" (Rtos::Kernel::SvcNumber::RESCHEDULE) : "r0");
     asm volatile("SVC %[svc_num]" : : [svc_num] "I" (Rtos::Kernel::SvcNumber::RESCHEDULE));
 }
 
-extern "C" void sysTickIsr()
+void sysTickIsr()
 {
     asm volatile("MOVS r0, %[svc_num]" : : [svc_num] "I" (Rtos::Kernel::SvcNumber::RESCHEDULE) : "r0");
     asm volatile("SVC %[svc_num]" : : [svc_num] "I" (Rtos::Kernel::SvcNumber::RESCHEDULE));

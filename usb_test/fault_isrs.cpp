@@ -1,14 +1,14 @@
-extern "C" void nmiIsr()
+void nmiIsr()
 {
     while(true);
 }
 
-extern "C" void hardFaultIsr()
+void hardFaultIsr()
 {
     while(true);
 }
 
-extern "C" void unhandledIrqIsr()
+void unhandledIrqIsr()
 {
     while(true);
 }

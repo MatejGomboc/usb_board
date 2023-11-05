@@ -6,9 +6,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(${CMAKE_PROJECT_NAME}
     main.cpp
-    linker_symbols.cpp
-    linker_symbols.hpp
-    vectors_table.s
+    vectors_table.cpp
     reset_isr.cpp
     fault_isrs.cpp
     rtos_isrs.cpp

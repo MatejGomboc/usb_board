@@ -8,19 +8,19 @@ OUTPUT_FORMAT("elf32-littlearm")
 ENTRY(resetIsr)
 
 SECTIONS {
-    __DATA_FLASH_START_SYMBOL__ = LOADADDR(.data);
+    __DATA_FLASH_START__ = LOADADDR(.data);
 
-    __GLOBAL_STACK_BOTTOM_SYMBOL__ = ORIGIN(RAM) + SIZEOF(.data) + SIZEOF(.bss);
-    __GLOBAL_STACK_SIZE_SYMBOL__ = LENGTH(RAM) - SIZEOF(.data) - SIZEOF(.bss);
-    __GLOBAL_STACK_TOP_SYMBOL__ = ORIGIN(RAM) + LENGTH(RAM);
+    __GLOBAL_STACK_BOTTOM__ = ORIGIN(RAM) + SIZEOF(.data) + SIZEOF(.bss);
+    __GLOBAL_STACK_SIZE__ = LENGTH(RAM) - SIZEOF(.data) - SIZEOF(.bss);
+    __GLOBAL_STACK_TOP__ = ORIGIN(RAM) + LENGTH(RAM);
 
-    __PROCESS_STACK_BOTTOM_SYMBOL__ = __GLOBAL_STACK_BOTTOM_SYMBOL__;
-    __PROCESS_STACK_SIZE_SYMBOL__ = DEFINED(__PROCESS_STACK_SIZE_SYMBOL__) ? __PROCESS_STACK_SIZE_SYMBOL__ : 0;
-    __PROCESS_STACK_TOP_SYMBOL__ = __PROCESS_STACK_BOTTOM_SYMBOL__ + __PROCESS_STACK_SIZE_SYMBOL__;
+    __PROCESS_STACK_BOTTOM__ = __GLOBAL_STACK_BOTTOM__;
+    __PROCESS_STACK_SIZE__ = DEFINED(__PROCESS_STACK_SIZE__) ? __PROCESS_STACK_SIZE__ : 0;
+    __PROCESS_STACK_TOP__ = __PROCESS_STACK_BOTTOM__ + __PROCESS_STACK_SIZE__;
 
-    __MAIN_STACK_BOTTOM_SYMBOL__ = __PROCESS_STACK_TOP_SYMBOL__;
-    __MAIN_STACK_SIZE_SYMBOL__ =  __GLOBAL_STACK_SIZE_SYMBOL__ - __PROCESS_STACK_SIZE_SYMBOL__;
-    __MAIN_STACK_TOP_SYMBOL__ = __MAIN_STACK_BOTTOM_SYMBOL__ + __MAIN_STACK_SIZE_SYMBOL__;
+    __MAIN_STACK_BOTTOM__ = __PROCESS_STACK_TOP__;
+    __MAIN_STACK_SIZE__ =  __GLOBAL_STACK_SIZE__ - __PROCESS_STACK_SIZE__;
+    __MAIN_STACK_TOP__ = __MAIN_STACK_BOTTOM__ + __MAIN_STACK_SIZE__;
 
     .vectors_table : {
         . = ALIGN(4);
@@ -118,7 +118,7 @@ SECTIONS {
 
     .data : {
         . = ALIGN(4);
-        __DATA_START_SYMBOL__ = .;
+        __DATA_START__ = .;
 
         *(.data)
         *(.data*)
@@ -126,19 +126,19 @@ SECTIONS {
         *(.RamFunc*)
 
         . = ALIGN(4);
-        __DATA_END_SYMBOL__ = .;
+        __DATA_END__ = .;
     } > RAM AT> FLASH
 
     .bss : {
         . = ALIGN(4);
-        __BSS_START_SYMBOL__ = .;
+        __BSS_START__ = .;
 
         *(.bss)
         *(.bss*)
         *(COMMON)
 
         . = ALIGN(4);
-        __BSS_END_SYMBOL__ = .;
+        __BSS_END__ = .;
 
         PROVIDE(end = .);
         PROVIDE(_end = .);
