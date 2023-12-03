@@ -1,6 +1,4 @@
-#define KERNEL_CODE
-#include "rtos_kernel.hpp"
-#undef KERNEL_CODE
+#include "rtos/kernel.hpp"
 #include <cstdint>
 
 static constexpr uint32_t STACK_FREE_SPACE_IDICATOR = 0xDEADDEAD;
@@ -43,5 +41,5 @@ extern "C" void resetIsr()
     }
 
     // start RTOS
-    Rtos::Kernel::initKernel();
+    Rtos::Kernel::init();
 }

@@ -163,7 +163,7 @@ namespace CortexM0 {
 
     static inline void setPrimaskReg(Primask primask)
     {
-        asm volatile("MSR PRIMASK, %0" : : "r" (primask.value) : );
+        asm volatile("MSR PRIMASK, %0" : : "r" (primask.value) : "memory");
     }
 
     static inline Control getControlReg()
@@ -175,7 +175,7 @@ namespace CortexM0 {
 
     static inline void setControlReg(Control control)
     {
-        asm volatile("MSR CONTROL, %0" : : "r" (control.value) : );
+        asm volatile("MSR CONTROL, %0" : : "r" (control.value) : "memory");
         asm volatile("ISB" : : : "memory");
     }
 }

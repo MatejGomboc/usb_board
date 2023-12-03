@@ -1,10 +1,7 @@
-#define KERNEL_CODE
-#include "rtos_svc_numbers.hpp"
-#undef KERNEL_CODE
+#include "threads.hpp"
+#include "svc_numbers.hpp"
 #include "cortexm0/special_regs.hpp"
 #include "cortexm0/scb.hpp"
-#include "cortexm0/systick.hpp"
-#include "cortexm0/exceptions.hpp"
 #include <cstdint>
 #include <cstddef>
 
@@ -14,92 +11,47 @@ extern uint32_t __PROCESS_STACK_TOP__;
 extern uint32_t __MAIN_STACK_BOTTOM__;
 extern uint32_t __MAIN_STACK_TOP__;
 
-extern int main();
+namespace Rtos {
 
-namespace Rtos::Kernel {
+    Threads::MainThread Threads::m_main_thread;
+    Threads::Thread Threads::m_threads[MAX_NUM_OF_THREADS];
+    size_t Threads::m_num_of_active_threads(1); // 1 means that only main thread is active
+    size_t Threads::m_current_thread_idx(0); // 0 means main thread
+    uint32_t* Threads::m_threads_stack_bottom(&__PROCESS_STACK_TOP__ - MAIN_THREAD_STACK_SIZE);
 
-    struct MainThread {
-        enum class State : uint8_t {
-            PAUSED = 0,
-            RUNNING = 1
-        };
-
-        State state{ State::RUNNING } ;
-        uint32_t* stack_pointer{ &__PROCESS_STACK_TOP__ };
-        uint32_t stack_size{ MAIN_THREAD_STACK_SIZE };
-    };
-
-    struct Thread {
-        enum class State : uint8_t {
-            PAUSED = 0,
-            RUNNING = 1,
-            STOPPED = 2
-        };
-
-        State state{ State::STOPPED };
-        uint32_t* stack_top{ nullptr };
-        uint32_t* stack_pointer{ nullptr };
-        uint32_t stack_size{ 0 };
-        void (*handler)(){ nullptr };
-    };
-
-    static MainThread m_main_thread;
-    static Thread m_threads[MAX_NUM_OF_THREADS];
-    static size_t m_num_of_active_threads{ 1 }; // 1 means that only main thread is active
-    static size_t m_current_thread_idx{ 0 }; // 0 means main thread
-    static uint32_t* m_threads_stack_bottom{ &__PROCESS_STACK_TOP__ - MAIN_THREAD_STACK_SIZE };
-
-    void initKernel()
+    Threads::MainThread::MainThread() :
+        stack_pointer(&__PROCESS_STACK_TOP__)
     {
-        // disable exceptions
-        CortexM0::enableExceptions();
-
-        // adjust SVCall priority
-        CortexM0::Scb::Shpr2 shpr2 { CortexM0::Scb::registers()->shpr2 };
-        shpr2.bits.sv_call_except_priority = 0x00;
-        CortexM0::Scb::registers()->shpr2 = shpr2.value;
-
-        // adjust SysTick and PendSV priorities
-        CortexM0::Scb::Shpr3 shpr3 { CortexM0::Scb::registers()->shpr3 };
-        shpr3.bits.pend_sv_except_priority = 0xFF;
-        shpr3.bits.sys_tick_except_priority = 0xFE;
-        CortexM0::Scb::registers()->shpr3 = shpr3.value;
-
-        // configure SysTick timer but don't enable it yet
-        CortexM0::SysTick::registers()->reload_val = SYSTICK_PERIOD_CYCLES;
-        CortexM0::SysTick::registers()->current_val = 0;
-
-        CortexM0::SysTick::CtrlStatus ctrl_status{ CortexM0::SysTick::registers()->ctrl_status };
-        ctrl_status.bits.clk_source = static_cast<bool>(CortexM0::SysTick::CtrlStatus::ClkSource::CPU);
-        ctrl_status.bits.exception_enabled = true;
-        ctrl_status.bits.timer_enabled = false;
-        CortexM0::SysTick::registers()->ctrl_status = ctrl_status.value;
-
-        // set PSP to the process stack top
-        CortexM0::setPspReg(reinterpret_cast<uint32_t>(&__PROCESS_STACK_TOP__));
-
-        // start using PSP
-        CortexM0::Control control { CortexM0::getControlReg() };
-        control.bits.active_stack_pointer = static_cast<bool>(CortexM0::Control::StackPointer::PSP);
-        CortexM0::setControlReg(control);
-
-        // set MSP to the main stack top
-        CortexM0::setMspReg(reinterpret_cast<uint32_t>(&__MAIN_STACK_TOP__));
-
-        // enable exceptions
-        CortexM0::enableExceptions();
-
-        // branch to main()
-        main();
     }
 
-    static void requestCurrentThreadStop()
+    bool Threads::createThread(void (*handler)(), uint32_t stack_size)
     {
-        asm volatile("MOVS r0, %[svc_num]" : : [svc_num] "I" (Rtos::Kernel::SvcNumber::STOP_THREAD) : "r0");
-        asm volatile("SVC %[svc_num]" : : [svc_num] "I" (Rtos::Kernel::SvcNumber::STOP_THREAD));
+        asm volatile("PUSH {%0, %1}" : : "r" (reinterpret_cast<uint32_t>(handler)), "r" (stack_size) : "memory");
+
+        asm volatile("MOV r1, sp" : : : "r1");
+        asm volatile("MOVS r0, %[svc_number]" : : [svc_number] "I" (SvcNumber::CREATE_THREAD) : "r0");
+
+        asm volatile("SVC %[svc_number]" : : [svc_number] "I" (SvcNumber::CREATE_THREAD));
+
+        bool status;
+        asm volatile("MOV %[output], r0" : [output] "=r" (status));
+        return status;
     }
 
-    bool createThread(void (*new_thread_handler)(), uint32_t new_thread_stack_size)
+    void Threads::yieldThread()
+    {
+        CortexM0::Scb::Icsr icsr{ CortexM0::Scb::registers()->icsr };
+        icsr.bits.pend_sv_set = true;
+        CortexM0::Scb::registers()->icsr = icsr.value;
+    }
+
+    void Threads::requestCurrentThreadStop()
+    {
+        asm volatile("MOVS r0, %[svc_num]" : : [svc_num] "I" (SvcNumber::STOP_THREAD) : "r0");
+        asm volatile("SVC %[svc_num]" : : [svc_num] "I" (SvcNumber::STOP_THREAD));
+    }
+
+    bool Threads::svcCreateThread(void (*new_thread_handler)(), uint32_t new_thread_stack_size)
     {
         // check if too many threads
         if (m_num_of_active_threads >= MAX_NUM_OF_THREADS) {
@@ -140,7 +92,7 @@ namespace Rtos::Kernel {
         return true;
     }
 
-    void runNextThread()
+    void Threads::svcRunNextThread()
     {
         // nothing to do if only single thread is running
         if (m_num_of_active_threads == 1) {
@@ -171,7 +123,7 @@ namespace Rtos::Kernel {
         }
     }
 
-    void stopCurrentThread()
+    void Threads::svcStopCurrentThread()
     {
         if ((m_current_thread_idx == 0) || (m_num_of_active_threads <= 1)) {
             while (true); // should never be reached

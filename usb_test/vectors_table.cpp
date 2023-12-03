@@ -1,3 +1,4 @@
+#include "rtos/isrs.hpp"
 #include <cstdint>
 
 extern uint32_t __GLOBAL_STACK_TOP__;
@@ -6,9 +7,6 @@ extern "C" void resetIsr();
 extern void nmiIsr();
 extern void hardFaultIsr();
 extern void unhandledIrqIsr();
-extern void svcIsr(uint32_t svc_num, uint32_t* args);
-extern void pendSvIsr();
-extern void sysTickIsr();
 
 __attribute__((section(".vectors_table"), used))
 void (* const vectors_table[])() = {
@@ -23,11 +21,11 @@ void (* const vectors_table[])() = {
     unhandledIrqIsr,
     unhandledIrqIsr,
     unhandledIrqIsr,
-    reinterpret_cast<void(*)()>(svcIsr),
+    reinterpret_cast<void(*)()>(Rtos::Isrs::svc),
     unhandledIrqIsr,
     unhandledIrqIsr,
-    pendSvIsr,
-    sysTickIsr,
+    Rtos::Isrs::pendSv,
+    Rtos::Isrs::sysTick,
     unhandledIrqIsr, // wwdgIrqIsr
     unhandledIrqIsr, // pvdVddio2IrqIsr
     unhandledIrqIsr, // rtcIrqIsr

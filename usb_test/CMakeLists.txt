@@ -9,18 +9,19 @@ add_executable(${CMAKE_PROJECT_NAME}
     vectors_table.cpp
     reset_isr.cpp
     fault_isrs.cpp
-    rtos_isrs.cpp
     utils.hpp
     cortexm0/exceptions.hpp
     cortexm0/special_regs.hpp
     cortexm0/nvic.hpp
     cortexm0/scb.hpp
     cortexm0/systick.hpp
-    rtos_api.hpp
-    rtos_api.cpp
-    rtos_kernel.cpp
-    rtos_kernel.hpp
-    rtos_svc_numbers.hpp
+    rtos/isrs.cpp
+    rtos/isrs.hpp
+    rtos/kernel.cpp
+    rtos/kernel.hpp
+    rtos/svc_numbers.hpp
+    rtos/threads.cpp
+    rtos/threads.hpp
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
