@@ -84,7 +84,7 @@ target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
 
 target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
     -mcpu=cortex-m0
-    -T${CMAKE_SOURCE_DIR}/STM32F072CBTX.ld
+    -T${CMAKE_SOURCE_DIR}/${CMAKE_PROJECT_NAME}.ld
     -Wl,-Map=${CMAKE_PROJECT_NAME}.map,--cref
     -nostdlib
     -Wl,--cref
