@@ -1,0 +1,13 @@
+{
+    "version": 2,
+    "configurePresets": [
+        {
+            "name": "arm_none_eabi_gcc",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/../build",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/arm_none_eabi_gcc.cmake"
+            }
+        }
+    ]
+}
